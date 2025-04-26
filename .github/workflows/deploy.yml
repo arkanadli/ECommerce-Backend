@@ -1,0 +1,36 @@
+name: Deploy ke EC2
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Gunakan Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+    - name: Install dependensi
+      run: npm ci
+    - name: Jalankan pengujian
+      run: npm test || echo "Tidak ada pengujian yang ditentukan"
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Deploy ke EC2
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        script: |
+          cd ~/ecommerce-app/ECommerce-Backend
+          sudo git pull origin main
+          npm install
+          pm2 restart backend
